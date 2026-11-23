@@ -1,0 +1,848 @@
+:root {
+  --paper: #ebe5d8;
+  --card: #ffffff;
+  --ink: #1d1d1b;
+  --ink-2: #4a4944;
+  --muted: #6f6d66;
+  --line: #d3cbb9;
+  --accent: #1f2a37;
+  --bar: #9aa6b2;
+  --bar-over: #33465a;
+  --target: #c2410c;
+  --held: #d97706;
+  --bad: #b42318;
+  --good: #2f7d4f;
+  color-scheme: light;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR',
+    sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--paper);
+  /* 당겨서 새로고침 / 바운스 스크롤 방지 */
+  overscroll-behavior: none;
+}
+
+/* 모바일 기본 동작 차단: 텍스트 선택, 길게 누를 때 메뉴, 탭 하이라이트, 두 번 탭 확대 */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+input,
+select,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  font: inherit;
+}
+body.exam-lock {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+h2 {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+/* ---------- 공통 ---------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+}
+.card-head h2 {
+  margin: 0;
+}
+.btn {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-weight: 600;
+}
+.btn.small {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  border-radius: 10px;
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn.ghost {
+  background: transparent;
+}
+.btn.danger {
+  color: var(--bad);
+}
+.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  margin: 6px 0 18px;
+}
+.actions .btn {
+  flex: 1;
+}
+.bad {
+  color: var(--bad);
+}
+.good {
+  color: var(--good);
+}
+
+/* ---------- 설정 화면 ---------- */
+.setup,
+.review {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: calc(20px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+}
+.tagline {
+  color: var(--ink-2);
+  margin: 4px 0 18px;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.form input:not([type='checkbox']),
+.form select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 1.05rem;
+  background: #fff;
+  color: var(--ink);
+  width: 100%;
+  min-width: 0;
+}
+.form .row {
+  display: flex;
+  gap: 10px;
+}
+.form .row label {
+  flex: 1;
+  min-width: 0;
+}
+.limit {
+  margin: 0;
+  color: var(--ink-2);
+}
+.limit strong {
+  color: var(--ink);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.hint {
+  margin: -6px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.seg {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 3px;
+  background: var(--paper);
+}
+.seg button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  padding: 10px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.seg button.on {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+.seg.small button {
+  white-space: nowrap;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+.form label.toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+}
+.toggle input {
+  width: 22px;
+  height: 22px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  overflow: hidden;
+}
+.chip-main {
+  border: 0;
+  background: none;
+  padding: 9px 4px 9px 14px;
+  font-weight: 600;
+}
+.chip-x {
+  border: 0;
+  background: none;
+  padding: 9px 12px;
+  color: var(--muted);
+}
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.history li + li {
+  border-top: 1px solid var(--line);
+}
+.history button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 0;
+  background: none;
+  padding: 12px 2px;
+  text-align: left;
+  font-weight: 600;
+}
+.history small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ---------- 시험 화면 ---------- */
+.exam {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  touch-action: none;
+}
+.exam-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.spacer {
+  flex: 1;
+}
+.qno {
+  border: 0;
+  background: none;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  touch-action: none;
+}
+.notice {
+  font-size: 0.8rem;
+  color: var(--held);
+}
+.end {
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.exam-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 8px 12px;
+}
+.clock {
+  width: min(78vw, 42vh, 400px);
+  height: auto;
+  filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.15));
+}
+.stopwatch {
+  font-size: clamp(3rem, 18vw, 6rem);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.exam-controls {
+  display: flex;
+  gap: 10px;
+  padding: 12px 12px 16px;
+  height: min(38vh, 300px);
+}
+.side-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 30%;
+}
+.exam-btn {
+  flex: 1;
+  background: var(--card);
+  color: var(--ink-2);
+  padding: 8px;
+  touch-action: none;
+}
+.next-btn {
+  flex: 1;
+  border: 0;
+  border-radius: 20px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 700;
+  touch-action: none;
+}
+.next-btn:active:not(:disabled) {
+  background: #33465a;
+}
+
+/* 종료 확인 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  padding: 24px;
+}
+.modal {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 22px 18px 16px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+}
+.modal p {
+  margin: 0 0 18px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+}
+.modal-actions .btn {
+  flex: 1;
+}
+
+/* 인트로 */
+.intro {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: calc(48px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+}
+.intro-title {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.intro-title h1 {
+  font-size: 1.8rem;
+}
+.intro-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.intro-btn {
+  aspect-ratio: 1;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.intro-btn svg {
+  width: 44%;
+  height: auto;
+}
+.intro-btn.play {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.intro-btn small {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: -6px;
+}
+.setup-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* OMR 그리드 */
+.omr-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.35);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 10;
+}
+.omr {
+  background: var(--card);
+  width: 100%;
+  max-width: 560px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px 16px 0 0;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+}
+.omr-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.omr-head em {
+  font-style: normal;
+  color: var(--held);
+}
+.omr-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+.omr-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 8px;
+  font-variant-numeric: tabular-nums;
+}
+.omr-no {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.omr-bubble,
+.dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-2);
+}
+.omr-cell.done .omr-bubble,
+.dot.done {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.omr-cell.held {
+  border-color: var(--held);
+  background: #fff7ea;
+}
+.omr-cell.held .omr-bubble,
+.dot.held {
+  border-color: var(--held);
+  background: repeating-linear-gradient(45deg, var(--held) 0 2px, transparent 2px 4px);
+}
+.omr-cell.current {
+  outline: 2.5px solid var(--accent);
+  outline-offset: -1px;
+}
+.omr-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  padding-top: 10px;
+}
+.omr-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ---------- 복기 화면 ---------- */
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.review-head small {
+  color: var(--muted);
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat span {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+.stat strong {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.stat small {
+  font-size: 0.78rem;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+}
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.sw {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.sw.normal {
+  background: var(--bar);
+}
+.sw.over {
+  background: var(--bar-over);
+}
+.sw.target {
+  height: 0;
+  border-top: 2px dashed var(--target);
+  border-radius: 0;
+}
+.chart-scroll {
+  overflow-x: auto;
+  touch-action: pan-x pan-y;
+}
+.chart svg {
+  display: block;
+}
+.chart .grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.chart .baseline {
+  stroke: var(--ink-2);
+  stroke-width: 1;
+}
+.chart .axis {
+  font-size: 10px;
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.chart .bar {
+  fill: var(--bar);
+}
+.chart .bar.over {
+  fill: var(--bar-over);
+}
+.chart .bar.sel {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.chart .target-line {
+  stroke: var(--target);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+.chart-tip {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  min-height: 1.3em;
+  font-variant-numeric: tabular-nums;
+}
+
+.qtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92rem;
+}
+.qtable th {
+  text-align: left;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.qtable td {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.qtable em {
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--held);
+}
+.qtable tr.undone td:first-child {
+  color: var(--held);
+}
+
+/* 다음 버튼 안의 문제 번호 */
+.next-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.next-no {
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.next-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+.qno {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.qno svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* 문제당 목표 시간 */
+.target {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.target-title {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.target-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.form .target-inputs input {
+  width: 72px;
+  text-align: center;
+}
+.target .hint {
+  margin: 0;
+}
+.link.small {
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* ===== 시험 화면: 구역별 색 대비 ===== */
+/* 위: 흰 띠 / 가운데: 종이색 / 아래: 진한 조작 패널 */
+.exam-top {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 12px;
+}
+.qno {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.end {
+  border-color: var(--bad);
+  color: var(--bad);
+  font-weight: 600;
+}
+.exam-center {
+  background: var(--paper);
+}
+
+/* 스톱워치: 진한 원 + 흰 숫자 */
+.stopwatch-circle {
+  width: min(70vw, 40vh, 320px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 6px solid #fff;
+  box-shadow: 0 0 0 2px var(--accent), 0 8px 24px rgb(0 0 0 / 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.stopwatch {
+  font-size: clamp(2.4rem, 13vw, 4.4rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+  line-height: 1;
+}
+.stopwatch-label {
+  font-size: 0.85rem;
+  color: rgb(255 255 255 / 0.7);
+  letter-spacing: 0.1em;
+}
+
+.exam-controls {
+  background: #2a3442;
+  padding: 14px 12px calc(16px + env(safe-area-inset-bottom));
+
+}
+.exam-btn {
+  border: 0;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.side-btns .exam-btn:first-child {
+  background: #fff;
+  color: var(--ink);
+}
+.side-btns .exam-btn:last-child {
+  background: #fde7c2;
+  color: #7a4300;
+}
+.exam-btn:disabled {
+  opacity: 0.35;
+}
+.next-btn {
+  background: #f6c343;
+  color: #1d1d1b;
+  box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.15);
+}
+.next-btn:active:not(:disabled) {
+  background: #e9b42f;
+  box-shadow: none;
+}
+.next-btn:disabled {
+  background: #4a5566;
+  color: rgb(255 255 255 / 0.7);
+  box-shadow: none;
+}
+.next-label {
+  opacity: 0.85;
+}
+.exam {
+  padding-bottom: 0;
+}
+.qtable td.muted-cell {
+  color: var(--ink-2);
+}
+.intro-footer {
+  margin-top: auto;
+  padding-top: 24px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
