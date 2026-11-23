@@ -15,10 +15,10 @@
 | 화면 꺼짐 방지 | ✅ | `src/lib/keepAwake.ts`. Wake Lock → 안 되면 무음 동영상. 폰 실기 확인 필요 |
 | 기록 보호 (persistent storage 요청) | ✅ | `main.tsx` |
 | 오류 시 복구 화면 | ✅ | `components/ErrorBoundary.tsx` |
-| git 저장소 | ⏳ | `git init` 만 함. 첫 커밋 전 |
+| git 저장소 | ✅ | https://github.com/hyemin2021/lap-timer (공개). CLAUDE.md 는 .gitignore 로 제외 |
 | 실제 폰에서 써 보기 (아이폰·안드로이드) | ⏳ | `npm run dev` → `http://<노트북 IP>:5173` |
 | 연속 탭 무시 간격 | ⏳ | `DEFAULT_DEBOUNCE_MS` = 0.5초. 폰에서 써 보고 확정 |
-| 배포 (Vercel 또는 GitHub Pages) | 대기 | 설정 파일은 준비됨 |
+| 배포 (GitHub Pages) | ✅ | https://hyemin2021.github.io/lap-timer/ — main 에 push 하면 자동 배포 |
 | 답지 보기 기능 | 대기 | |
 | PWABuilder → 구글 플레이 | 대기 | |
 
@@ -31,5 +31,4 @@
 - 복기 평균은 본 문제만으로 계산
 
 ## 다음에 할 것
-- 프로젝트를 이 세션 임시 폴더에서 원하는 폴더로 옮기기 → 첫 커밋(v0.1.0)
 - 폰에서 실제로 한 회분 풀어 보고 화면 꺼짐 방지 확인
