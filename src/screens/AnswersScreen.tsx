@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import data from '../data/answerKeys.json'
 
 /**
- * 답지 보기: 공식 최종정답을 시험 → 연도 → 과목 순으로 골라 본다.
+ * 답지 보기: 시험 → 연도 → 과목 → (책형이 둘이면) 책형 순으로 골라 본다.
  * 채점은 종이에서 하므로, 정답을 크게 5문항씩 끊어 보여주기만 한다.
  */
 
@@ -19,47 +19,68 @@ const CIRCLED = ['', '①', '②', '③', '④', '⑤']
 const LAST_KEY = 'laptimer.answersLast'
 const NOTICE_URL = 'https://gongmuwon.gosi.kr/oprut/EvmArPrblmCransGdLst.do'
 
+interface Last {
+  exam: string
+  yearKey: string
+  subject: string
+  booklet: string
+}
+
 interface Props {
   onBack: () => void
 }
 
-function loadLast(): { exam: string; year: number; subject: string } | null {
+function loadLast(): Partial<Last> {
   try {
-    return JSON.parse(localStorage.getItem(LAST_KEY) ?? 'null')
+    return JSON.parse(localStorage.getItem(LAST_KEY) ?? '{}') ?? {}
   } catch {
-    return null
+    return {}
   }
 }
+
+/** 연도 칩 하나 = 연도 + (외교원 같은 별도 시험이면 그 이름) */
+const yearKeyOf = (k: Key) => `${k.year}${k.variant ? ' ' + k.variant : ''}`
 
 /** 정답 하나 → ①, 복수정답 → ①③ */
 const show = (a: number | number[]) => (Array.isArray(a) ? a.map((n) => CIRCLED[n]).join('') : CIRCLED[a])
 
+/** 지금 값이 목록에 있으면 그대로, 없으면 첫 번째 */
+const pick = <T,>(list: T[], v: T | undefined) => (v !== undefined && list.includes(v) ? v : list[0])
+
 export function AnswersScreen({ onBack }: Props) {
-  const last = loadLast()
-  const [exam, setExam] = useState<string>(last?.exam ?? '7급')
-  const years = useMemo(
-    () => [...new Set(data.keys.filter((k) => k.exam === exam).map((k) => k.year))].sort((a, b) => b - a),
-    [exam],
+  const [sel, setSel] = useState<Partial<Last>>(loadLast)
+
+  const exam = pick(
+    EXAMS.map((e) => e.id as string),
+    sel.exam ?? '7급',
   )
-  const [yearState, setYear] = useState<number>(last?.year ?? years[0])
-  const year = years.includes(yearState) ? yearState : years[0]
+  const inExam = useMemo(() => data.keys.filter((k) => k.exam === exam), [exam])
 
-  const subjects = useMemo(
-    () =>
-      data.keys
-        .filter((k) => k.exam === exam && k.year === year)
-        .map((k) => k.subject)
-        .sort((a, b) => SUBJECT_ORDER.indexOf(a) - SUBJECT_ORDER.indexOf(b)),
-    [exam, year],
+  const yearKeys = useMemo(() => {
+    const seen = new Map<string, Key>()
+    for (const k of inExam) if (!seen.has(yearKeyOf(k))) seen.set(yearKeyOf(k), k)
+    return [...seen.entries()]
+      .sort(([, a], [, b]) => b.year - a.year || a.variant.localeCompare(b.variant))
+      .map(([yk]) => yk)
+  }, [inExam])
+  const yearKey = pick(yearKeys, sel.yearKey)
+
+  const inYear = inExam.filter((k) => yearKeyOf(k) === yearKey)
+  const subjects = [...new Set(inYear.map((k) => k.subject))].sort(
+    (a, b) => SUBJECT_ORDER.indexOf(a) - SUBJECT_ORDER.indexOf(b),
   )
-  const [subjectState, setSubject] = useState<string>(last?.subject ?? subjects[0])
-  const subject = subjects.includes(subjectState) ? subjectState : subjects[0]
+  const subject = pick(subjects, sel.subject)
 
-  const key: Key | undefined = data.keys.find((k) => k.exam === exam && k.year === year && k.subject === subject)
+  const inSubject = inYear.filter((k) => k.subject === subject)
+  const booklets = inSubject.map((k) => k.booklet)
+  const booklet = pick(booklets, sel.booklet)
 
-  // 마지막으로 본 답지를 기억해 두었다가 다음에 바로 연다
-  const remember = (next: { exam?: string; year?: number; subject?: string }) => {
-    const v = { exam, year, subject, ...next }
+  const key = inSubject.find((k) => k.booklet === booklet)
+
+  // 고른 값을 기억해 두었다가 다음에 바로 연다
+  const choose = (next: Partial<Last>) => {
+    const v = { exam, yearKey, subject, booklet, ...next }
+    setSel(v)
     try {
       localStorage.setItem(LAST_KEY, JSON.stringify(v))
     } catch {
@@ -89,10 +110,7 @@ export function AnswersScreen({ onBack }: Props) {
             role="tab"
             aria-selected={exam === e.id}
             className={exam === e.id ? 'on' : ''}
-            onClick={() => {
-              setExam(e.id)
-              remember({ exam: e.id })
-            }}
+            onClick={() => choose({ exam: e.id })}
           >
             {e.label}
           </button>
@@ -100,16 +118,13 @@ export function AnswersScreen({ onBack }: Props) {
       </div>
 
       <div className="chips answer-years" role="radiogroup" aria-label="연도">
-        {years.map((y) => (
+        {yearKeys.map((y) => (
           <button
             key={y}
             role="radio"
-            aria-checked={y === year}
-            className={`chip-btn ${y === year ? 'on' : ''}`}
-            onClick={() => {
-              setYear(y)
-              remember({ year: y })
-            }}
+            aria-checked={y === yearKey}
+            className={`chip-btn ${y === yearKey ? 'on' : ''}`}
+            onClick={() => choose({ yearKey: y })}
           >
             {y}
           </button>
@@ -123,15 +138,30 @@ export function AnswersScreen({ onBack }: Props) {
             role="radio"
             aria-checked={s === subject}
             className={`chip-btn ${s === subject ? 'on' : ''}`}
-            onClick={() => {
-              setSubject(s)
-              remember({ subject: s })
-            }}
+            onClick={() => choose({ subject: s })}
           >
             {s}
           </button>
         ))}
       </div>
+
+      {/* 예전 시험은 책형이 둘. 책형마다 문항 순서가 달라 정답도 다르다 */}
+      {booklets.length > 1 && (
+        <div className="chips" role="radiogroup" aria-label="책형">
+          <span className="chips-label">책형</span>
+          {booklets.map((b) => (
+            <button
+              key={b}
+              role="radio"
+              aria-checked={b === booklet}
+              className={`chip-btn ${b === booklet ? 'on' : ''}`}
+              onClick={() => choose({ booklet: b })}
+            >
+              {b}
+            </button>
+          ))}
+        </div>
+      )}
 
       {key && (
         <section className="card answer-card">
@@ -139,8 +169,11 @@ export function AnswersScreen({ onBack }: Props) {
             <strong>
               {key.year} {key.examName} · {key.subject}
             </strong>
-            <span className="booklet">{key.booklet} 책형</span>
+            {key.booklet !== '-' && <span className="booklet">{key.booklet} 책형</span>}
           </div>
+          {key.provisional && (
+            <p className="answer-warn">이 해는 최종정답이 공개되지 않아 정답가안이에요. 일부 문항은 최종 정답과 다를 수 있어요.</p>
+          )}
           <div className="answer-grid">
             {groups.map((g) => (
               <div key={g.start} className="answer-group">
@@ -156,7 +189,7 @@ export function AnswersScreen({ onBack }: Props) {
           <p className="hint answer-source">
             인사혁신처{' '}
             <a href={NOTICE_URL} target="_blank" rel="noreferrer">
-              최종정답
+              {key.provisional ? '정답가안' : '최종정답'}
             </a>{' '}
             기준. 다른 책형 문제지로 풀었다면 번호가 다를 수 있어요.
           </p>

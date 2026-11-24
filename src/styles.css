@@ -993,3 +993,18 @@ h2 {
 .is-paused .clock {
   opacity: 0.45;
 }
+.chips-label {
+  align-self: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-2);
+  margin-right: 2px;
+}
+.answer-warn {
+  margin: -4px 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff4e0;
+  color: #7a4300;
+  font-size: 0.85rem;
+}
