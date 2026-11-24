@@ -7,11 +7,13 @@ interface Props {
   session: Session
   onHome: () => void
   onDelete: () => void
+  /** 끝난 시험을 이어서 풀기 */
+  onContinue: () => void
 }
 
 type SortKey = 'q' | 'ms'
 
-export function ReviewScreen({ session, onHome, onDelete }: Props) {
+export function ReviewScreen({ session, onHome, onDelete, onContinue }: Props) {
   const { config, events } = session
   const sum = useMemo(() => summarize(config, events), [config, events])
   const [sort, setSort] = useState<SortKey>('q')
@@ -78,6 +80,13 @@ export function ReviewScreen({ session, onHome, onDelete }: Props) {
           <span>검토 시간</span>
           <strong>{formatDuration(sum.reviewMs)}</strong>
         </div>
+        {sum.pausedMs > 0 && (
+          <div className="stat">
+            <span>일시정지</span>
+            <strong>{formatDuration(sum.pausedMs)}</strong>
+            <small>총 소요에서 뺌</small>
+          </div>
+        )}
       </section>
 
       <section className="card">
@@ -140,6 +149,9 @@ export function ReviewScreen({ session, onHome, onDelete }: Props) {
           }}
         >
           기록 삭제
+        </button>
+        <button className="btn" onClick={onContinue}>
+          이어풀기
         </button>
         <button className="btn primary" onClick={onHome}>
           새 시험

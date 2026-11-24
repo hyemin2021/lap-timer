@@ -7,12 +7,13 @@
 | 항목 | 상태 | 메모 |
 |---|---|---|
 | 프로젝트 세팅 (Vite·React·TS·PWA·Vitest) | ✅ | |
-| 타이머 로직 + 단위 테스트 | ✅ | `src/lib/timer.ts`, 테스트 35개 통과 |
+| 타이머 로직 + 단위 테스트 | ✅ | `src/lib/timer.ts`, 테스트 43개 통과 |
 | 인트로 화면 (시험 시작 / 답지 보기) | ✅ | 하단에 버전 표시 |
 | 설정 화면 (타이머식·시계식, 문제당 목표 시간, 프리셋) | ✅ | |
 | 시험 화면 (큰 다음 버튼, 스톱워치/벽시계, 종료 확인창) | ✅ | |
 | 복기 화면 (요약, 문제별 표 → 막대그래프) | ✅ | 구간 원본 로그는 화면에서 뺌(데이터는 저장) |
 | 설정 없이 바로 시작 (문항 수 미정 모드) | ✅ | 인트로 체크박스. 로컬에서 확인, 아직 배포 전 |
+| 일시정지 · 이어풀기 | ✅ | 로컬 확인, 아직 배포 전 |
 | 화면 꺼짐 방지 | ✅ | `src/lib/keepAwake.ts`. Wake Lock → 안 되면 무음 동영상. 폰 실기 확인 필요 |
 | 기록 보호 (persistent storage 요청) | ✅ | `main.tsx` |
 | 오류 시 복구 화면 | ✅ | `components/ErrorBoundary.tsx` |
@@ -22,7 +23,8 @@
 | 배포 (GitHub Pages) | ✅ | https://hyemin2021.github.io/lap-timer/ — main 에 push 하면 자동 배포 |
 | 답지 데이터 수집 | ✅ | `src/data/answerKeys.json` 48세트 (5급·7급 PSAT, 9급 국어·영어, 2021~2026). ANSWER_KEYS.md 참고 |
 | 답지 보기 화면 | ✅ | 인트로 [답지 보기]. 로컬 확인, 아직 배포 전. 채점 기능은 안 만듦 |
-| PWABuilder → 구글 플레이 | 대기 | |
+| 안드로이드 APK (친구 공유용) | ✅ | PWABuilder로 생성(패키지 io.github.hyemin2021.laptimer, v1.0.0). 파일은 내 컴퓨터 Downloads\랩타이머-android-1.0.0 (서명 키 포함, git에 올리지 않음). 도메인 확인 파일은 github.com/hyemin2021/hyemin2021.github.io 저장소, Google 확인 결과 linked: true. 실제 폰 설치는 아직 |
+| 구글 플레이 | 대기 | 같은 서명 키·AAB 사용 |
 
 ## 명세에 없어서 임의로 정한 것
 - 다음 문제 순서: 현재 문제 뒤쪽의 미완료 문제 우선 → 끝까지 가면 앞에서부터 보류 문제

@@ -36,6 +36,8 @@ export type ExamEvent =
   | { type: 'tap'; t: number }
   | { type: 'skip'; t: number }
   | { type: 'jump'; to: number; t: number }
+  | { type: 'pause'; t: number }
+  | { type: 'resume'; t: number }
   | { type: 'end'; t: number }
 
 export type QuestionStatus = 'todo' | 'done' | 'held'
@@ -61,6 +63,10 @@ export interface ExamState {
   endedAt: number | null
   /** 마지막 문제를 넘겨서 보류 문제로 자동 이동했을 때 띄울 작은 표시 */
   notice: { kind: 'held'; q: number } | null
+  /** 일시정지한 시각. null 이면 진행 중 */
+  pausedAt: number | null
+  /** 지금까지 일시정지했던 시간의 합 (ms) */
+  pausedMs: number
   /** 문항 수를 정하지 않은 시험 (설정 없이 바로 시작). 넘길 때마다 문제가 하나씩 늘어난다 */
   open: boolean
 }
@@ -119,6 +125,8 @@ export function targetMs(config: ExamConfig): number {
 export function initialState(questionCount: number): ExamState {
   return {
     open: questionCount <= 0,
+    pausedAt: null,
+    pausedMs: 0,
     current: null,
     statuses: Array.from({ length: questionCount }, () => 'todo' as QuestionStatus),
     segments: [],
@@ -192,7 +200,7 @@ export function applyEvent(prev: ExamState, e: ExamEvent): ExamState {
       return s
     }
     case 'tap': {
-      if (s.startedAt === null || s.current === null) return s
+      if (s.startedAt === null || s.current === null || s.pausedAt !== null) return s
       closeSegment(s, e.t)
       const cur = s.current
       s.statuses[cur] = 'done'
@@ -200,7 +208,7 @@ export function applyEvent(prev: ExamState, e: ExamEvent): ExamState {
       return s
     }
     case 'skip': {
-      if (s.startedAt === null || s.current === null) return s
+      if (s.startedAt === null || s.current === null || s.pausedAt !== null) return s
       closeSegment(s, e.t)
       const cur = s.current
       if (s.statuses[cur] !== 'done') s.statuses[cur] = 'held'
@@ -208,7 +216,7 @@ export function applyEvent(prev: ExamState, e: ExamEvent): ExamState {
       return s
     }
     case 'jump': {
-      if (s.startedAt === null) return s
+      if (s.startedAt === null || s.pausedAt !== null) return s
       if (e.to < 0 || e.to >= s.statuses.length || e.to === s.current) return s
       closeSegment(s, e.t)
       if (s.current !== null && s.statuses[s.current] !== 'done') {
@@ -218,8 +226,28 @@ export function applyEvent(prev: ExamState, e: ExamEvent): ExamState {
       s.notice = null
       return s
     }
+    case 'pause': {
+      // 지금 구간을 닫고, 다시 시작할 때까지 어떤 문제에도 시간을 더하지 않는다
+      if (s.startedAt === null || s.pausedAt !== null) return s
+      closeSegment(s, e.t)
+      s.openSince = null
+      s.pausedAt = e.t
+      return s
+    }
+    case 'resume': {
+      if (s.pausedAt === null) return s
+      s.pausedMs += e.t - s.pausedAt
+      s.pausedAt = null
+      s.openSince = e.t // 멈췄던 그 문제에서 새 구간 시작
+      return s
+    }
     case 'end': {
       if (s.startedAt === null) return s
+      // 일시정지 중에 종료하면 그 시간도 일시정지로 센다
+      if (s.pausedAt !== null) {
+        s.pausedMs += e.t - s.pausedAt
+        s.pausedAt = null
+      }
       // 문항 수 미정 시험: 마지막 [다음] 뒤에 자동으로 생긴 문제는 실제로 푼 문제가 아니다.
       // 그 문제는 지우고, 그 시간은 검토 시간(q = null)으로 기록한다.
       const cur = s.current
@@ -266,6 +294,10 @@ export function tryAppend(
   if (e.type === 'start') return state.startedAt === null ? [...events, e] : null
   if (state.startedAt === null) return null
 
+  if (e.type === 'pause' && state.pausedAt !== null) return null
+  if (e.type === 'resume' && state.pausedAt === null) return null
+  // 일시정지 중에는 [계속]과 [종료]만 받는다
+  if (state.pausedAt !== null && e.type !== 'resume' && e.type !== 'end') return null
   if (e.type === 'tap' || e.type === 'skip') {
     if (state.current === null) return null
   }
@@ -280,11 +312,29 @@ export function tryAppend(
   return [...events, e]
 }
 
-/** 직전 이벤트 하나를 취소. 'start'와 'end'는 되돌리지 않는다. */
+/**
+ * 직전의 탭·건너뛰기·이동 하나를 취소한다.
+ * - 'start'와 'end'는 되돌리지 않는다.
+ * - 일시정지/계속은 되돌리기 대상이 아니다. 그 뒤에 있어도 건너뛰고 그 앞의 탭을 취소한다.
+ *   (일시정지했던 시간은 그대로 일시정지로 남는다)
+ * - 일시정지 중에는 되돌리지 않는다.
+ */
 export function undo(events: readonly ExamEvent[]): ExamEvent[] | null {
-  const last = events[events.length - 1]
-  if (!last || last.type === 'start' || last.type === 'end') return null
-  return events.slice(0, -1)
+  const lastEvt = events[events.length - 1]
+  if (!lastEvt || lastEvt.type === 'end' || lastEvt.type === 'pause') return null
+  for (let i = events.length - 1; i >= 0; i--) {
+    const t = events[i].type
+    if (t === 'tap' || t === 'skip' || t === 'jump') return [...events.slice(0, i), ...events.slice(i + 1)]
+    if (t === 'start') return null
+  }
+  return null
+}
+
+/** 화면에 보여줄 경과 시간 = 지금 − 시작 − 일시정지했던 시간 (일시정지 중이면 멈춘 시각 기준) */
+export function elapsedMs(state: ExamState, now: number): number {
+  if (state.startedAt === null) return 0
+  const until = state.endedAt ?? state.pausedAt ?? now
+  return Math.max(0, until - state.startedAt - state.pausedMs)
 }
 
 // ---------------------------------------------------------------------------
@@ -312,6 +362,8 @@ export interface ExamSummary {
   avgMs: number
   doneCount: number
   reviewMs: number
+  /** 일시정지했던 시간의 합 */
+  pausedMs: number
   questions: QuestionSummary[]
   segments: Segment[]
 }
@@ -324,17 +376,21 @@ export function summarize(config: ExamConfig, events: readonly ExamEvent[], now 
   }
   const questions: QuestionSummary[] = state.statuses.map((status, q) => ({ q, ms: 0, visits: 0, status, doneAt: null as number | null }))
   let reviewMs = 0
+  // 구간들은 일시정지를 빼고 실제로 푼 시간만 이어 붙인 것 → 누적하면 "일시정지 뺀 경과 시간"
+  let activeMs = 0
   for (const seg of state.segments) {
     const d = seg.end - seg.start
+    activeMs += d
     if (seg.q === null) reviewMs += d
     else {
       questions[seg.q].ms += d
       questions[seg.q].visits += 1
-      // 완료 시점 = 그 문제의 마지막 구간이 끝난 때
-      if (state.startedAt !== null && questions[seg.q].status === 'done') questions[seg.q].doneAt = seg.end - state.startedAt
+      // 완료 시점 = 그 문제의 마지막 구간이 끝난 때 (일시정지 뺀 경과 시간)
+      if (questions[seg.q].status === 'done') questions[seg.q].doneAt = activeMs
     }
   }
-  const totalMs = state.startedAt !== null && state.endedAt !== null ? state.endedAt - state.startedAt : 0
+  // 총 소요 시간에서 일시정지했던 시간은 뺀다
+  const totalMs = state.startedAt !== null && state.endedAt !== null ? state.endedAt - state.startedAt - state.pausedMs : 0
   const lim = limitMs(config)
   // 평균은 실제로 본 문제(시간 > 0)만으로 낸다. 다 안 푸는 시험에서 안 본 문제가 0초로 섞이지 않게
   const seen = questions.filter((q) => q.ms > 0)
@@ -348,6 +404,7 @@ export function summarize(config: ExamConfig, events: readonly ExamEvent[], now 
     avgMs: seen.length > 0 ? seenMs / seen.length : 0,
     doneCount: questions.filter((q) => q.status === 'done').length,
     reviewMs,
+    pausedMs: state.pausedMs,
     questions,
     segments: state.segments,
   }
@@ -376,4 +433,16 @@ export function formatRemaining(remainingMs: number): string {
 export function examTitle(config: Pick<ExamConfig, 'name' | 'questionCount'>): string {
   if (config.name.trim()) return config.name
   return config.questionCount > 0 ? `${config.questionCount}문항` : '바로 시작'
+}
+
+/**
+ * 끝난 시험을 이어서 풀기.
+ * 'end' 이벤트를 빼고, 끝낸 시각~지금을 일시정지로 넣는다.
+ * → 쉬었던 시간은 어떤 문제에도, 총 소요에도 들어가지 않고, 끝낼 때 보던 문제부터 다시 시작한다.
+ */
+export function continueAfterEnd(events: readonly ExamEvent[], now: number): ExamEvent[] | null {
+  const last = events[events.length - 1]
+  if (!last || last.type !== 'end') return null
+  const t = Math.max(now, last.t)
+  return [...events.slice(0, -1), { type: 'pause', t: last.t }, { type: 'resume', t }]
 }

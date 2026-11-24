@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   type ExamConfig,
   type ExamEvent,
+  continueAfterEnd,
+  elapsedMs,
   formatDuration,
   formatRemaining,
   limitMs,
@@ -300,6 +302,117 @@ describe('설정 없이 바로 시작 (문항 수 미정)', () => {
       { type: 'end', t: 15 * S },
     ])
     expect(summarize(open, ev).questions).toHaveLength(1)
+  })
+})
+
+describe('일시정지', () => {
+  it('멈춘 동안의 시간은 어떤 문제에도, 총 소요에도 들어가지 않는다', () => {
+    const c = cfg(3)
+    const ev = run(c, [
+      { type: 'start', t: 0 },
+      { type: 'pause', t: 10 * S }, // 1번 10초 보고 멈춤
+      { type: 'resume', t: 70 * S }, // 60초 쉼
+      { type: 'tap', t: 80 * S }, // 1번 10초 더 → 완료
+      { type: 'end', t: 90 * S },
+    ])
+    const sum = summarize(c, ev)
+    expect(sum.questions[0]).toMatchObject({ ms: 20 * S, status: 'done' })
+    expect(sum.pausedMs).toBe(60 * S)
+    expect(sum.totalMs).toBe(30 * S)
+    expect(sum.questions[0].doneAt).toBe(20 * S) // 완료 시점도 일시정지 시간을 뺀다
+  })
+
+  it('멈춘 동안에는 탭·건너뛰기·이동·되돌리기가 안 된다', () => {
+    const c = cfg(3)
+    const base = run(c, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 5 * S },
+      { type: 'pause', t: 10 * S },
+    ])
+    expect(tryAppend(c, base, { type: 'tap', t: 20 * S })).toBeNull()
+    expect(tryAppend(c, base, { type: 'skip', t: 20 * S })).toBeNull()
+    expect(tryAppend(c, base, { type: 'jump', to: 2, t: 20 * S })).toBeNull()
+    expect(tryAppend(c, base, { type: 'pause', t: 20 * S })).toBeNull()
+    expect(undo(base)).toBeNull()
+    expect(tryAppend(c, base, { type: 'end', t: 20 * S })).not.toBeNull()
+  })
+
+  it('계속한 뒤 되돌리기는 일시정지 앞의 탭을 취소한다', () => {
+    const c = cfg(3)
+    const ev = run(c, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 10 * S },
+      { type: 'pause', t: 20 * S },
+      { type: 'resume', t: 50 * S },
+    ])
+    const after = undo(ev)!
+    expect(after.map((e) => e.type)).toEqual(['start', 'pause', 'resume'])
+    const s = replay(3, after)
+    expect(s.current).toBe(0)
+    expect(s.pausedMs).toBe(30 * S)
+  })
+
+  it('일시정지 중에 종료해도 그 시간은 일시정지로 센다', () => {
+    const c = cfg(2)
+    const ev = run(c, [
+      { type: 'start', t: 0 },
+      { type: 'pause', t: 10 * S },
+      { type: 'end', t: 40 * S },
+    ])
+    const sum = summarize(c, ev)
+    expect(sum.pausedMs).toBe(30 * S)
+    expect(sum.totalMs).toBe(10 * S)
+    expect(sum.questions[0].ms).toBe(10 * S)
+  })
+
+  it('화면 경과 시간은 멈춘 동안 그대로다', () => {
+    const c = cfg(2)
+    const ev = run(c, [
+      { type: 'start', t: 0 },
+      { type: 'pause', t: 10 * S },
+    ])
+    expect(elapsedMs(replay(2, ev), 100 * S)).toBe(10 * S)
+    const resumed = run(c, [...ev, { type: 'resume', t: 40 * S }])
+    expect(elapsedMs(replay(2, resumed), 45 * S)).toBe(15 * S)
+  })
+})
+
+describe('이어풀기 (끝난 시험 다시 열기)', () => {
+  it('끝낸 시각부터 다시 연 시각까지는 일시정지로 들어가고, 보던 문제부터 이어진다', () => {
+    const c = cfg(3)
+    const ended = run(c, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 30 * S }, // 1번 완료
+      { type: 'end', t: 50 * S }, // 2번 20초 보다가 종료
+    ])
+    const cont = continueAfterEnd(ended, 3600 * S)!
+    let s = replay(3, cont)
+    expect(s.endedAt).toBeNull()
+    expect(s.pausedAt).toBeNull()
+    expect(s.current).toBe(1)
+    expect(elapsedMs(s, 3610 * S)).toBe(60 * S)
+    const done = run(c, [...cont, { type: 'tap', t: 3620 * S }, { type: 'end', t: 3630 * S }])
+    const sum = summarize(c, done)
+    expect(sum.questions[1].ms).toBe(40 * S) // 종료 전 20초 + 이어서 20초
+    expect(sum.totalMs).toBe(80 * S)
+    expect(sum.pausedMs).toBe(3550 * S)
+  })
+
+  it('끝나지 않은 시험에는 쓸 수 없다', () => {
+    expect(continueAfterEnd([{ type: 'start', t: 0 }], 10)).toBeNull()
+  })
+
+  it('문항 수 미정 시험도 종료 때 지웠던 빈 문제가 다시 살아나 거기서 이어진다', () => {
+    const open = cfg(0, { mode: 'timer', limitMinutes: 0 })
+    const ended = run(open, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 30 * S },
+      { type: 'end', t: 40 * S },
+    ])
+    expect(summarize(open, ended).questions).toHaveLength(1)
+    const s = replay(0, continueAfterEnd(ended, 100 * S)!)
+    expect(s.current).toBe(1)
+    expect(s.statuses).toEqual(['done', 'todo'])
   })
 })
 

@@ -15,7 +15,7 @@ import {
   saveLastConfig,
   QUICK_CONFIG,
 } from './lib/storage'
-import type { ExamConfig } from './lib/timer'
+import { type ExamConfig, continueAfterEnd } from './lib/timer'
 import { keepAwake } from './lib/keepAwake'
 
 type View =
@@ -88,6 +88,16 @@ export default function App() {
           onDelete={() => {
             deleteHistory(view.session.id)
             home()
+          }}
+          onContinue={() => {
+            // 끝낸 시각~지금은 일시정지로 처리하고, 같은 기록(id)을 다시 진행 중으로 연다.
+            // 다시 종료하면 기록 목록의 같은 항목이 새 결과로 바뀐다.
+            const events = continueAfterEnd(view.session.events, Date.now())
+            if (!events) return
+            keepAwake()
+            const session = { ...view.session, events }
+            saveActive(session)
+            setView({ kind: 'exam', session })
           }}
         />
       )

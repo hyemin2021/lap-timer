@@ -961,3 +961,35 @@ h2 {
 .answer-source a {
   color: var(--accent);
 }
+
+/* ===== 일시정지 ===== */
+.exam-center {
+  flex-direction: column;
+  gap: 14px;
+}
+.pause-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--accent);
+  background: var(--card);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.pause-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+.pause-btn.on {
+  background: var(--accent);
+  color: #fff;
+}
+/* 멈춘 동안 시간 표시를 흐리게 */
+.is-paused .stopwatch-circle,
+.is-paused .clock {
+  opacity: 0.45;
+}
