@@ -29,7 +29,7 @@ export function AnalogClock({ startMinutes, elapsedMs }: Props) {
         y1={100 - r1 * Math.cos(a)}
         x2={100 + r2 * Math.sin(a)}
         y2={100 - r2 * Math.cos(a)}
-        stroke="#111"
+        stroke="#eceef1"
         strokeWidth={major ? 2.6 : 1}
       />
     )
@@ -48,7 +48,7 @@ export function AnalogClock({ startMinutes, elapsedMs }: Props) {
         dominantBaseline="central"
         fontSize="15"
         fontWeight="600"
-        fill="#111"
+        fill="#eceef1"
         fontFamily="'Helvetica Neue', Arial, sans-serif"
       >
         {n}
@@ -59,28 +59,28 @@ export function AnalogClock({ startMinutes, elapsedMs }: Props) {
   return (
     <svg className="clock" viewBox="0 0 200 200" role="img" aria-label="시험장 시계">
       {/* 테두리(프레임) */}
-      <circle cx="100" cy="100" r="99" fill="#2b2b2b" />
-      <circle cx="100" cy="100" r="96" fill="#fdfdfb" />
+      <circle cx="100" cy="100" r="99" fill="#2a2f37" />
+      <circle cx="100" cy="100" r="96" fill="#181b20" />
       {ticks}
       {numbers}
       {/* 시침 */}
       <line
         x1="100" y1="112" x2="100" y2="52"
-        stroke="#111" strokeWidth="6" strokeLinecap="round"
+        stroke="#eceef1" strokeWidth="6" strokeLinecap="round"
         transform={`rotate(${hourDeg} 100 100)`}
       />
       {/* 분침 */}
       <line
         x1="100" y1="114" x2="100" y2="22"
-        stroke="#111" strokeWidth="3.6" strokeLinecap="round"
+        stroke="#eceef1" strokeWidth="3.6" strokeLinecap="round"
         transform={`rotate(${minDeg} 100 100)`}
       />
       {/* 초침 */}
       <g transform={`rotate(${secDeg} 100 100)`}>
-        <line x1="100" y1="124" x2="100" y2="16" stroke="#d62828" strokeWidth="1.6" strokeLinecap="round" />
-        <circle cx="100" cy="100" r="4" fill="#d62828" />
+        <line x1="100" y1="124" x2="100" y2="16" stroke="#ff6b6b" strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="100" cy="100" r="4" fill="#ff6b6b" />
       </g>
-      <circle cx="100" cy="100" r="1.6" fill="#fdfdfb" />
+      <circle cx="100" cy="100" r="1.6" fill="#181b20" />
     </svg>
   )
 }

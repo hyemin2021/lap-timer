@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>글씨체 시안</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css" />
+<link rel="stylesheet" href="https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=Gowun+Dodum&family=Black+Han+Sans&display=swap" />
+<style>
+  body { margin: 0; padding: 24px; background: #08090b; color: #eceef1; font-family: system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .lead { color: #868d99; font-size: 13px; margin: 0 0 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: #0e1013; border: 1px solid #2a2f37; border-radius: 16px; padding: 18px; }
+  .name { font-family: system-ui, sans-serif; font-size: 13px; font-weight: 700; color: #ffb547; margin: 0 0 2px; }
+  .desc { font-family: system-ui, sans-serif; font-size: 12px; color: #868d99; margin: 0 0 16px; line-height: 1.5; }
+  .title { font-size: 24px; font-weight: 700; margin: 0; }
+  .sub { font-size: 13px; color: #b9bec7; margin: 4px 0 16px; }
+  .row { display: flex; align-items: center; gap: 14px; }
+  .circle { width: 132px; aspect-ratio: 1; border-radius: 50%; background: #181b20; border: 2px solid #ffb547;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .circle b { font-size: 34px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+  .circle small { font-size: 11px; color: #ffb547; letter-spacing: .1em; margin-top: 4px; }
+  .next { flex: 1; height: 132px; border-radius: 16px; background: #ffb547; color: #1a1205;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .next b { font-size: 44px; line-height: 1; font-weight: 700; }
+  .next span { font-size: 14px; font-weight: 700; margin-top: 4px; }
+  .ans { margin-top: 14px; display: flex; gap: 8px; font-size: 15px; }
+  .ans div { flex: 1; background: #181b20; border: 1px solid #2a2f37; border-radius: 8px; padding: 6px 0; text-align: center; }
+  .ans i { font-style: normal; color: #868d99; font-size: 12px; margin-right: 4px; }
+  .body { font-size: 14px; color: #b9bec7; margin: 14px 0 0; line-height: 1.6; }
+</style>
+</head>
+<body>
+<h1>글씨체 시안 (어두운 테마)</h1>
+<p class="lead">같은 화면 조각을 글씨체만 바꿔 보여줘요. 숫자(타이머·문항 번호)가 얼마나 잘 읽히는지 위주로 보세요.</p>
+<div class="grid" id="grid"></div>
+<script>
+  const fonts = [
+    ['Pretendard', "'Pretendard'", '지금 앱에 적혀 있지만 실제로 불러오지 않아서 폰 기본 글꼴로 나오고 있어요. 가장 무난하고 숫자 폭이 일정해요.'],
+    ['SUIT', "'SUIT'", 'Pretendard와 비슷하지만 조금 더 단단하고 기하학적이에요. 숫자가 또렷해요.'],
+    ['Spoqa Han Sans Neo', "'Spoqa Han Sans Neo'", '살짝 둥글고 친근해요. 굵게 쓰면 숫자가 큼직하게 보여요.'],
+    ['IBM Plex Sans KR', "'IBM Plex Sans KR'", '각진 기계 느낌이라 타이머·계측기 분위기가 나요. 한글은 조금 딱딱해요.'],
+    ['Gowun Dodum', "'Gowun Dodum'", '손글씨에 가까운 부드러운 글꼴이에요. 굵기가 하나뿐이라 버튼·숫자가 약해 보여요.'],
+    ['Black Han Sans + Pretendard', "'Pretendard'", '제목만 아주 굵은 Black Han Sans, 나머지는 Pretendard. 개성은 있지만 제목에만 써야 해요.', "'Black Han Sans'"],
+  ]
+  document.getElementById('grid').innerHTML = fonts.map(([name, fam, desc, head]) => `
+    <section class="card">
+      <p class="name">${name}</p>
+      <p class="desc">${desc}</p>
+      <div style="font-family:${fam}, sans-serif">
+        <p class="title" style="${head ? `font-family:${head};font-weight:400` : ''}">문제별 랩 타이머</p>
+        <p class="sub">풀 때는 탭만, 분석은 끝나고.</p>
+        <div class="row">
+          <div class="circle"><b>12:48</b><small>경과</small></div>
+          <div class="next"><b>17</b><span>다음</span></div>
+        </div>
+        <div class="ans">${[3,1,4,2,5].map((a,i)=>`<div><i>${i+31}</i>${'①②③④⑤'[a-1]}</div>`).join('')}</div>
+        <p class="body">2026 5급 공채 1차 (PSAT) · 상황판단 — 평균 1분 42초, 검토 시간 6분 10초</p>
+      </div>
+    </section>`).join('')
+</script>
+</body>
+</html>

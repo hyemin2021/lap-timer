@@ -29,8 +29,8 @@ export default defineConfig({
         scope: base,
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#ebe5d8',
-        theme_color: '#ebe5d8',
+        background_color: '#0e1013',
+        theme_color: '#0e1013',
         categories: ['education', 'productivity'],
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
@@ -41,6 +41,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // 글꼴은 글자 묶음별로 나뉜 파일이라, 처음 쓸 때 받아서 저장해 두고 오프라인에서도 쓴다
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === 'font',
+            handler: 'CacheFirst',
+            options: { cacheName: 'fonts', expiration: { maxEntries: 120 } },
+          },
+        ],
       },
     }),
   ],

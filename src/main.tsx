@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './styles.css'
 
 // 서비스 워커 등록 → 오프라인에서도 동작, 새 버전이 나오면 자동 갱신
