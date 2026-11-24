@@ -846,3 +846,25 @@ h2 {
   font-size: 0.8rem;
   color: var(--muted);
 }
+
+/* 설정 없이 바로 시작 (시험 시작 버튼 바로 아래) */
+.quick-start {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: 4px 0;
+}
+.quick-start input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+.quick-start {
+  white-space: nowrap;
+  font-size: 0.88rem;
+}

@@ -226,6 +226,83 @@ describe('문항 이동 (OMR 그리드)', () => {
   })
 })
 
+describe('설정 없이 바로 시작 (문항 수 미정)', () => {
+  const open = cfg(0, { mode: 'timer', limitMinutes: 0 })
+
+  it('넘길 때마다 문제가 하나씩 생긴다', () => {
+    const ev = run(open, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 10 * S },
+      { type: 'tap', t: 20 * S },
+    ])
+    const s = replay(0, ev)
+    expect(s.current).toBe(2)
+    expect(s.statuses).toEqual(['done', 'done', 'todo'])
+  })
+
+  it('건너뛰어도 보류 문제로 되돌아가지 않고 계속 앞으로 간다', () => {
+    const ev = run(open, [
+      { type: 'start', t: 0 },
+      { type: 'skip', t: 10 * S },
+      { type: 'tap', t: 20 * S },
+    ])
+    const s = replay(0, ev)
+    expect(s.statuses).toEqual(['held', 'done', 'todo'])
+    expect(s.current).toBe(2)
+    expect(s.notice).toBeNull()
+  })
+
+  it('문항표로 보류 문제에 갔다가 끝내면, 뒤쪽 안 끝낸 문제로 간다', () => {
+    const ev = run(open, [
+      { type: 'start', t: 0 },
+      { type: 'skip', t: 10 * S }, // 1번 보류 → 2번
+      { type: 'tap', t: 20 * S }, // 2번 완료 → 3번(새로 생김)
+      { type: 'jump', to: 0, t: 30 * S }, // 1번으로 (3번은 보류)
+      { type: 'tap', t: 40 * S }, // 1번 완료 → 3번
+    ])
+    const s = replay(0, ev)
+    expect(s.current).toBe(2)
+    expect(s.statuses).toEqual(['done', 'done', 'held'])
+  })
+
+  it('종료하면 마지막 [다음] 뒤에 생긴 빈 문제는 지우고 그 시간은 검토 시간으로', () => {
+    const ev = run(open, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 30 * S },
+      { type: 'tap', t: 50 * S },
+      { type: 'end', t: 70 * S },
+    ])
+    const sum = summarize(open, ev)
+    expect(sum.questions).toHaveLength(2)
+    expect(sum.doneCount).toBe(2)
+    expect(sum.reviewMs).toBe(20 * S)
+    expect(sum.totalMs).toBe(70 * S)
+    expect(sum.limitMs).toBeNaN()
+    expect(sum.targetMs).toBeNaN()
+  })
+
+  it('풀던 문제(시간이 쌓인 문제)는 종료해도 지우지 않는다', () => {
+    const ev = run(open, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 30 * S },
+      { type: 'jump', to: 0, t: 40 * S }, // 2번에 10초 있다가 1번으로
+      { type: 'jump', to: 1, t: 45 * S }, // 다시 2번으로
+      { type: 'end', t: 60 * S },
+    ])
+    const sum = summarize(open, ev)
+    expect(sum.questions).toHaveLength(2)
+    expect(sum.questions[1].ms).toBe(25 * S)
+  })
+
+  it('첫 문제에서 바로 종료해도 그 문제는 남긴다', () => {
+    const ev = run(open, [
+      { type: 'start', t: 0 },
+      { type: 'end', t: 15 * S },
+    ])
+    expect(summarize(open, ev).questions).toHaveLength(1)
+  })
+})
+
 describe('되돌리기', () => {
   it('직전 이벤트를 취소하면 이전 상태와 정확히 같다', () => {
     const c = cfg(4)

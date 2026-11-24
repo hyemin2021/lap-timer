@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { BarChart } from '../components/BarChart'
 import type { Session } from '../lib/storage'
-import { formatDuration, summarize } from '../lib/timer'
+import { examTitle, formatDuration, summarize } from '../lib/timer'
 
 interface Props {
   session: Session
@@ -21,6 +21,10 @@ export function ReviewScreen({ session, onHome, onDelete }: Props) {
     [sum.questions, sort],
   )
   const over = sum.overMs > 0
+  // 설정 없이 시작한 시험은 제한시간·목표가 없다 → 관련 칸은 숨긴다
+  const hasLimit = Number.isFinite(sum.limitMs)
+  const hasTarget = Number.isFinite(sum.targetMs)
+  const open = config.questionCount <= 0
   const startedAt = events[0]?.t
 
   return (
@@ -30,7 +34,7 @@ export function ReviewScreen({ session, onHome, onDelete }: Props) {
           ← 처음으로
         </button>
         <div>
-          <h1>{config.name || `${config.questionCount}문항`}</h1>
+          <h1>{examTitle(config)}</h1>
           {startedAt && (
             <small>{new Date(startedAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}</small>
           )}
@@ -41,26 +45,30 @@ export function ReviewScreen({ session, onHome, onDelete }: Props) {
         <div className="stat">
           <span>총 소요</span>
           <strong>{formatDuration(sum.totalMs)}</strong>
-          <small className={over ? 'bad' : 'good'}>
-            {over ? `▲ ${formatDuration(sum.overMs)} 초과` : `✓ ${formatDuration(-sum.overMs)} 남김`}
-          </small>
+          {hasLimit && (
+            <small className={over ? 'bad' : 'good'}>
+              {over ? `▲ ${formatDuration(sum.overMs)} 초과` : `✓ ${formatDuration(-sum.overMs)} 남김`}
+            </small>
+          )}
         </div>
-        <div className="stat">
-          <span>제한시간</span>
-          <strong>{formatDuration(sum.limitMs)}</strong>
-          <small>{config.mode === 'clock' ? `${config.startClock}–${config.endClock}` : '타이머식'}</small>
-        </div>
+        {hasLimit && (
+          <div className="stat">
+            <span>제한시간</span>
+            <strong>{formatDuration(sum.limitMs)}</strong>
+            <small>{config.mode === 'clock' ? `${config.startClock}–${config.endClock}` : '타이머식'}</small>
+          </div>
+        )}
         <div className="stat">
           <span>완료</span>
-          <strong>
-            {sum.doneCount} / {config.questionCount}
-          </strong>
+          <strong>{open ? `${sum.doneCount}문제` : `${sum.doneCount} / ${config.questionCount}`}</strong>
         </div>
-        <div className="stat">
-          <span>문제당 목표</span>
-          <strong>{formatDuration(sum.targetMs)}</strong>
-          <small>{sum.targetIsCustom ? '직접 설정' : '추천값'}</small>
-        </div>
+        {hasTarget && (
+          <div className="stat">
+            <span>문제당 목표</span>
+            <strong>{formatDuration(sum.targetMs)}</strong>
+            <small>{sum.targetIsCustom ? '직접 설정' : '추천값'}</small>
+          </div>
+        )}
         <div className="stat">
           <span>평균</span>
           <strong>{formatDuration(sum.avgMs)}</strong>

@@ -14,7 +14,9 @@ interface Props {
 export function BarChart({ questions, targetMs }: Props) {
   const [sel, setSel] = useState<number | null>(null)
   const n = questions.length
-  const maxMs = Math.max(targetMs * 1.15, ...questions.map((q) => q.ms), 1)
+  // 목표가 없는 시험(설정 없이 시작)은 기준선·초과 색 없이 그린다
+  const hasTarget = Number.isFinite(targetMs) && targetMs > 0
+  const maxMs = Math.max(hasTarget ? targetMs * 1.15 : 0, ...questions.map((q) => q.ms), 1)
 
   const H = 180
   const padL = 40
@@ -35,11 +37,13 @@ export function BarChart({ questions, targetMs }: Props) {
 
   return (
     <div className="chart">
-      <div className="chart-legend">
-        <span><i className="sw normal" />목표 이내</span>
-        <span><i className="sw over" />목표 초과</span>
-        <span><i className="sw target" />목표 {formatDuration(targetMs)}</span>
-      </div>
+      {hasTarget && (
+        <div className="chart-legend">
+          <span><i className="sw normal" />목표 이내</span>
+          <span><i className="sw over" />목표 초과</span>
+          <span><i className="sw target" />목표 {formatDuration(targetMs)}</span>
+        </div>
+      )}
       <div className="chart-scroll">
         <svg width={W} height={H} role="img" aria-label="문제별 소요 시간 막대그래프">
           {yTicks.map((v) => (
@@ -55,7 +59,7 @@ export function BarChart({ questions, targetMs }: Props) {
             const top = y(q.ms)
             const h = Math.max(0, y(0) - top)
             const r = Math.min(4, barW / 2, h)
-            const over = q.ms > targetMs
+            const over = hasTarget && q.ms > targetMs
             // 위쪽만 둥근 막대 (아래는 기준선에 붙음)
             const d = `M${x},${y(0)} V${top + r} Q${x},${top} ${x + r},${top} H${x + barW - r} Q${x + barW},${top} ${x + barW},${top + r} V${y(0)} Z`
             return (
@@ -71,7 +75,7 @@ export function BarChart({ questions, targetMs }: Props) {
               </g>
             )
           })}
-          <line x1={padL} x2={W} y1={y(targetMs)} y2={y(targetMs)} className="target-line" />
+          {hasTarget && <line x1={padL} x2={W} y1={y(targetMs)} y2={y(targetMs)} className="target-line" />}
           <line x1={padL} x2={W} y1={y(0)} y2={y(0)} className="baseline" />
         </svg>
       </div>

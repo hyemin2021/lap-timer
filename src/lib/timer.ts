@@ -61,6 +61,8 @@ export interface ExamState {
   endedAt: number | null
   /** 마지막 문제를 넘겨서 보류 문제로 자동 이동했을 때 띄울 작은 표시 */
   notice: { kind: 'held'; q: number } | null
+  /** 문항 수를 정하지 않은 시험 (설정 없이 바로 시작). 넘길 때마다 문제가 하나씩 늘어난다 */
+  open: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -109,8 +111,14 @@ export function targetMs(config: ExamConfig): number {
 // 재생(replay)
 // ---------------------------------------------------------------------------
 
+/**
+ * questionCount 가 0 이면 "문항 수 미정" 시험.
+ * - [다음]을 누를 때마다 다음 번호가 새로 생긴다 (끝이 없으므로 보류 문제로 되돌아가지 않음)
+ * - 보류 문제는 문항표로 직접 찾아간다
+ */
 export function initialState(questionCount: number): ExamState {
   return {
+    open: questionCount <= 0,
     current: null,
     statuses: Array.from({ length: questionCount }, () => 'todo' as QuestionStatus),
     segments: [],
@@ -148,6 +156,17 @@ function closeSegment(s: ExamState, t: number): void {
 }
 
 function moveTo(s: ExamState, from: number): void {
+  if (s.open) {
+    // 뒤쪽에 아직 안 끝낸 문제가 있으면 거기로, 없으면 새 문제를 하나 만든다
+    let q = s.statuses.findIndex((st, i) => i > from && st !== 'done')
+    if (q === -1) {
+      s.statuses.push('todo')
+      q = s.statuses.length - 1
+    }
+    s.current = q
+    s.notice = null
+    return
+  }
   const { q, wrapped } = nextTarget(s.statuses, from)
   s.current = q
   s.notice = q !== null && wrapped ? { kind: 'held', q } : null
@@ -167,6 +186,7 @@ export function applyEvent(prev: ExamState, e: ExamEvent): ExamState {
       if (s.startedAt !== null) return s
       s.startedAt = e.t
       s.openSince = e.t
+      if (s.open) s.statuses.push('todo')
       s.current = s.statuses.length > 0 ? 0 : null
       s.notice = null
       return s
@@ -200,6 +220,20 @@ export function applyEvent(prev: ExamState, e: ExamEvent): ExamState {
     }
     case 'end': {
       if (s.startedAt === null) return s
+      // 문항 수 미정 시험: 마지막 [다음] 뒤에 자동으로 생긴 문제는 실제로 푼 문제가 아니다.
+      // 그 문제는 지우고, 그 시간은 검토 시간(q = null)으로 기록한다.
+      const cur = s.current
+      if (
+        s.open &&
+        cur !== null &&
+        cur === s.statuses.length - 1 &&
+        cur > 0 &&
+        s.statuses[cur] === 'todo' &&
+        !s.segments.some((g) => g.q === cur)
+      ) {
+        s.statuses.pop()
+        s.current = null
+      }
       closeSegment(s, e.t)
       s.openSince = null
       s.endedAt = e.t
@@ -240,7 +274,8 @@ export function tryAppend(
     if (last && e.t - last.t < config.debounceMs) return null
   }
   if (e.type === 'jump') {
-    if (e.to === state.current || e.to < 0 || e.to >= config.questionCount) return null
+    // 이동 범위는 지금까지 있는 문제 수 기준 (문항 수 미정 시험은 계속 늘어나므로)
+    if (e.to === state.current || e.to < 0 || e.to >= state.statuses.length) return null
   }
   return [...events, e]
 }
@@ -335,4 +370,10 @@ export function formatDuration(ms: number): string {
 /** 남은 시간 표시. 초과하면 '+03:12' */
 export function formatRemaining(remainingMs: number): string {
   return remainingMs >= 0 ? formatDuration(remainingMs) : `+${formatDuration(-remainingMs)}`
+}
+
+/** 기록 목록·복기 화면에 쓸 시험 제목 */
+export function examTitle(config: Pick<ExamConfig, 'name' | 'questionCount'>): string {
+  if (config.name.trim()) return config.name
+  return config.questionCount > 0 ? `${config.questionCount}문항` : '바로 시작'
 }

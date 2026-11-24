@@ -21,6 +21,7 @@ const KEY_ACTIVE = 'laptimer.active'
 const KEY_HISTORY = 'laptimer.history'
 const KEY_PRESETS = 'laptimer.presets'
 const KEY_LAST_CONFIG = 'laptimer.lastConfig'
+const KEY_QUICK_START = 'laptimer.quickStart'
 const HISTORY_LIMIT = 50
 
 function read<T>(key: string, fallback: T): T {
@@ -83,3 +84,16 @@ export const savePresets = (p: Preset[]) => write(KEY_PRESETS, p)
 
 export const loadLastConfig = (): ExamConfig => normalizeConfig(read<Partial<ExamConfig>>(KEY_LAST_CONFIG, {}))
 export const saveLastConfig = (c: ExamConfig) => write(KEY_LAST_CONFIG, c)
+
+export const loadQuickStart = () => read<boolean>(KEY_QUICK_START, false)
+export const saveQuickStart = (v: boolean) => write(KEY_QUICK_START, v)
+
+/** 설정 없이 바로 시작할 때 쓰는 설정: 이름·문항 수·제한시간 없음, 스톱워치 */
+export const QUICK_CONFIG: ExamConfig = {
+  ...DEFAULT_CONFIG,
+  name: '',
+  questionCount: 0,
+  mode: 'timer',
+  limitMinutes: 0,
+  targetSeconds: 0,
+}

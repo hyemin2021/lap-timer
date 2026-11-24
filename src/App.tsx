@@ -12,6 +12,7 @@ import {
   newId,
   saveActive,
   saveLastConfig,
+  QUICK_CONFIG,
 } from './lib/storage'
 import type { ExamConfig } from './lib/timer'
 import { keepAwake } from './lib/keepAwake'
@@ -32,19 +33,26 @@ export default function App() {
   const [view, setView] = useState<View>(initialView)
   const home = () => setView({ kind: 'intro' })
 
+  const startExam = (config: ExamConfig) => {
+    keepAwake() // [시작]을 누른 순간 화면 꺼짐 방지 켜기
+    const session: Session = { id: newId(), config, events: [{ type: 'start', t: Date.now() }] }
+    saveActive(session)
+    setView({ kind: 'exam', session })
+  }
+
   switch (view.kind) {
     case 'intro':
       return (
-        <IntroScreen onPlay={() => setView({ kind: 'setup' })} onOpenHistory={(s) => setView({ kind: 'review', session: s })} />
+        <IntroScreen
+          onPlay={(quick) => (quick ? startExam(QUICK_CONFIG) : setView({ kind: 'setup' }))}
+          onOpenHistory={(s) => setView({ kind: 'review', session: s })}
+        />
       )
 
     case 'setup': {
       const start = (config: ExamConfig) => {
-        keepAwake() // [시작]을 누른 순간 화면 꺼짐 방지 켜기
         saveLastConfig(config)
-        const session: Session = { id: newId(), config, events: [{ type: 'start', t: Date.now() }] }
-        saveActive(session)
-        setView({ kind: 'exam', session })
+        startExam(config)
       }
       return <SetupScreen onStart={start} onBack={home} />
     }

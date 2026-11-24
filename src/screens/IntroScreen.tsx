@@ -1,13 +1,16 @@
 import { useState } from 'react'
-import { type Session, loadHistory } from '../lib/storage'
+import { type Session, loadHistory, loadQuickStart, saveQuickStart } from '../lib/storage'
+import { examTitle } from '../lib/timer'
 
 interface Props {
-  onPlay: () => void
+  /** quick = true 이면 설정 화면 없이 바로 시험 시작 */
+  onPlay: (quick: boolean) => void
   onOpenHistory: (s: Session) => void
 }
 
 export function IntroScreen({ onPlay, onOpenHistory }: Props) {
   const [history] = useState<Session[]>(loadHistory)
+  const [quick, setQuick] = useState(loadQuickStart)
 
   return (
     <main className="intro">
@@ -17,7 +20,7 @@ export function IntroScreen({ onPlay, onOpenHistory }: Props) {
       </div>
 
       <div className="intro-buttons">
-        <button className="intro-btn play" onClick={onPlay} aria-label="시험 시작">
+        <button className="intro-btn play" onClick={() => onPlay(quick)} aria-label="시험 시작">
           <svg viewBox="0 0 48 48" aria-hidden="true">
             <path d="M17 11 L38 24 L17 37 Z" fill="currentColor" strokeLinejoin="round" stroke="currentColor" strokeWidth="3" />
           </svg>
@@ -34,6 +37,19 @@ export function IntroScreen({ onPlay, onOpenHistory }: Props) {
           <span>답지 보기</span>
           <small>준비 중</small>
         </button>
+
+        {/* 체크하면 ▶ 한 번에 바로 시작. 선택은 기억해 둔다 */}
+        <label className="quick-start">
+          <input
+            type="checkbox"
+            checked={quick}
+            onChange={(e) => {
+              setQuick(e.target.checked)
+              saveQuickStart(e.target.checked)
+            }}
+          />
+          설정 없이 바로 시작
+        </label>
       </div>
 
       {history.length > 0 && (
@@ -45,7 +61,7 @@ export function IntroScreen({ onPlay, onOpenHistory }: Props) {
               return (
                 <li key={s.id}>
                   <button onClick={() => onOpenHistory(s)}>
-                    <span>{s.config.name || `${s.config.questionCount}문항`}</span>
+                    <span>{examTitle(s.config)}</span>
                     <small>
                       {start ? new Date(start).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }) : ''}
                     </small>
