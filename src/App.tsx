@@ -90,11 +90,11 @@ export default function App() {
             home()
           }}
           onContinue={() => {
-            // 끝낸 시각~지금은 일시정지로 처리하고, 같은 기록(id)을 다시 진행 중으로 연다.
+            // 끝낸 시각부터 일시정지로 처리하고, 같은 기록(id)을 다시 진행 중으로 연다.
             // 다시 종료하면 기록 목록의 같은 항목이 새 결과로 바뀐다.
-            const events = continueAfterEnd(view.session.events, Date.now())
+            // 일시정지 상태로 열린다. [이어서 풀기]를 누르면 그때부터 시간이 간다.
+            const events = continueAfterEnd(view.session.events)
             if (!events) return
-            keepAwake()
             const session = { ...view.session, events }
             saveActive(session)
             setView({ kind: 'exam', session })

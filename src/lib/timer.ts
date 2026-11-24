@@ -36,7 +36,8 @@ export type ExamEvent =
   | { type: 'tap'; t: number }
   | { type: 'skip'; t: number }
   | { type: 'jump'; to: number; t: number }
-  | { type: 'pause'; t: number }
+  /** reason: 'continue' = 끝난 시험을 다시 열면서 생긴 일시정지 (버튼 문구를 "이어서 풀기"로) */
+  | { type: 'pause'; t: number; reason?: 'continue' }
   | { type: 'resume'; t: number }
   | { type: 'end'; t: number }
 
@@ -67,6 +68,8 @@ export interface ExamState {
   pausedAt: number | null
   /** 지금까지 일시정지했던 시간의 합 (ms) */
   pausedMs: number
+  /** 지금 일시정지가 이어풀기로 생긴 것인지 */
+  pausedForContinue: boolean
   /** 문항 수를 정하지 않은 시험 (설정 없이 바로 시작). 넘길 때마다 문제가 하나씩 늘어난다 */
   open: boolean
 }
@@ -127,6 +130,7 @@ export function initialState(questionCount: number): ExamState {
     open: questionCount <= 0,
     pausedAt: null,
     pausedMs: 0,
+    pausedForContinue: false,
     current: null,
     statuses: Array.from({ length: questionCount }, () => 'todo' as QuestionStatus),
     segments: [],
@@ -232,12 +236,14 @@ export function applyEvent(prev: ExamState, e: ExamEvent): ExamState {
       closeSegment(s, e.t)
       s.openSince = null
       s.pausedAt = e.t
+      s.pausedForContinue = e.reason === 'continue'
       return s
     }
     case 'resume': {
       if (s.pausedAt === null) return s
       s.pausedMs += e.t - s.pausedAt
       s.pausedAt = null
+      s.pausedForContinue = false
       s.openSince = e.t // 멈췄던 그 문제에서 새 구간 시작
       return s
     }
@@ -437,12 +443,12 @@ export function examTitle(config: Pick<ExamConfig, 'name' | 'questionCount'>): s
 
 /**
  * 끝난 시험을 이어서 풀기.
- * 'end' 이벤트를 빼고, 끝낸 시각~지금을 일시정지로 넣는다.
+ * 'end' 이벤트를 "끝낸 시각에 일시정지"로 바꾼다. 바로 시작하지 않고 일시정지 상태로 열리며,
+ * 사용자가 [이어서 풀기]를 누르는 순간 'resume' 이 들어간다.
  * → 쉬었던 시간은 어떤 문제에도, 총 소요에도 들어가지 않고, 끝낼 때 보던 문제부터 다시 시작한다.
  */
-export function continueAfterEnd(events: readonly ExamEvent[], now: number): ExamEvent[] | null {
+export function continueAfterEnd(events: readonly ExamEvent[]): ExamEvent[] | null {
   const last = events[events.length - 1]
   if (!last || last.type !== 'end') return null
-  const t = Math.max(now, last.t)
-  return [...events.slice(0, -1), { type: 'pause', t: last.t }, { type: 'resume', t }]
+  return [...events.slice(0, -1), { type: 'pause', t: last.t, reason: 'continue' }]
 }

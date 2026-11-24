@@ -107,7 +107,7 @@ export function ExamScreen({ session, onChange, onEnd }: Props) {
           <svg viewBox="0 0 24 24" aria-hidden="true">
             {paused ? <path d="M8 5 L19 12 L8 19 Z" /> : <path d="M7 5 h3.5 v14 H7 Z M13.5 5 H17 v14 h-3.5 Z" />}
           </svg>
-          {paused ? '계속하기' : '일시정지'}
+          {paused ? (state.pausedForContinue ? '이어서 풀기' : '계속하기') : '일시정지'}
         </button>
       </div>
 

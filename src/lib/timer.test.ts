@@ -372,23 +372,31 @@ describe('일시정지', () => {
       { type: 'pause', t: 10 * S },
     ])
     expect(elapsedMs(replay(2, ev), 100 * S)).toBe(10 * S)
+    expect(replay(2, ev).pausedForContinue).toBe(false) // 보통 일시정지 → 버튼 문구: 계속하기
     const resumed = run(c, [...ev, { type: 'resume', t: 40 * S }])
     expect(elapsedMs(replay(2, resumed), 45 * S)).toBe(15 * S)
   })
 })
 
 describe('이어풀기 (끝난 시험 다시 열기)', () => {
-  it('끝낸 시각부터 다시 연 시각까지는 일시정지로 들어가고, 보던 문제부터 이어진다', () => {
+  it('일시정지 상태로 열리고, [이어서 풀기]를 누르면 보던 문제부터 이어진다', () => {
     const c = cfg(3)
     const ended = run(c, [
       { type: 'start', t: 0 },
       { type: 'tap', t: 30 * S }, // 1번 완료
       { type: 'end', t: 50 * S }, // 2번 20초 보다가 종료
     ])
-    const cont = continueAfterEnd(ended, 3600 * S)!
-    let s = replay(3, cont)
-    expect(s.endedAt).toBeNull()
+    const opened = continueAfterEnd(ended)!
+    const waiting = replay(3, opened)
+    expect(waiting.endedAt).toBeNull()
+    expect(waiting.pausedAt).toBe(50 * S) // 바로 시작하지 않고 멈춘 상태
+    expect(waiting.pausedForContinue).toBe(true) // 버튼 문구: 이어서 풀기
+    expect(elapsedMs(waiting, 3000 * S)).toBe(50 * S) // 기다리는 동안 시간이 안 감
+    expect(tryAppend(c, opened, { type: 'tap', t: 3000 * S })).toBeNull()
+    const cont = run(c, [...opened, { type: 'resume', t: 3600 * S }])
+    const s = replay(3, cont)
     expect(s.pausedAt).toBeNull()
+    expect(s.pausedForContinue).toBe(false)
     expect(s.current).toBe(1)
     expect(elapsedMs(s, 3610 * S)).toBe(60 * S)
     const done = run(c, [...cont, { type: 'tap', t: 3620 * S }, { type: 'end', t: 3630 * S }])
@@ -399,7 +407,7 @@ describe('이어풀기 (끝난 시험 다시 열기)', () => {
   })
 
   it('끝나지 않은 시험에는 쓸 수 없다', () => {
-    expect(continueAfterEnd([{ type: 'start', t: 0 }], 10)).toBeNull()
+    expect(continueAfterEnd([{ type: 'start', t: 0 }])).toBeNull()
   })
 
   it('문항 수 미정 시험도 종료 때 지웠던 빈 문제가 다시 살아나 거기서 이어진다', () => {
@@ -410,7 +418,7 @@ describe('이어풀기 (끝난 시험 다시 열기)', () => {
       { type: 'end', t: 40 * S },
     ])
     expect(summarize(open, ended).questions).toHaveLength(1)
-    const s = replay(0, continueAfterEnd(ended, 100 * S)!)
+    const s = replay(0, continueAfterEnd(ended)!)
     expect(s.current).toBe(1)
     expect(s.statuses).toEqual(['done', 'todo'])
   })
