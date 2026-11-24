@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AnswersScreen } from './screens/AnswersScreen'
 import { ExamScreen } from './screens/ExamScreen'
 import { IntroScreen } from './screens/IntroScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
@@ -20,6 +21,7 @@ import { keepAwake } from './lib/keepAwake'
 type View =
   | { kind: 'intro' }
   | { kind: 'setup' }
+  | { kind: 'answers' }
   | { kind: 'exam'; session: Session }
   | { kind: 'review'; session: Session }
 
@@ -46,8 +48,12 @@ export default function App() {
         <IntroScreen
           onPlay={(quick) => (quick ? startExam(QUICK_CONFIG) : setView({ kind: 'setup' }))}
           onOpenHistory={(s) => setView({ kind: 'review', session: s })}
+          onAnswers={() => setView({ kind: 'answers' })}
         />
       )
+
+    case 'answers':
+      return <AnswersScreen onBack={home} />
 
     case 'setup': {
       const start = (config: ExamConfig) => {

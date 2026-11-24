@@ -868,3 +868,96 @@ h2 {
   white-space: nowrap;
   font-size: 0.88rem;
 }
+
+/* ===== 답지 보기 ===== */
+.intro-btn.sheet {
+  color: var(--accent);
+  border: 2px solid var(--accent);
+}
+.answers {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: calc(20px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chip-btn {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.chip-btn.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.answer-years {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  touch-action: pan-x;
+  padding-bottom: 2px;
+}
+.answer-card {
+  margin-bottom: 0;
+}
+.answer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.booklet {
+  flex: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+/* 5문항씩 한 묶음, 묶음 사이에 굵은 줄 (종이 OMR 처럼) */
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.answer-group {
+  border: 1.5px solid var(--ink-2);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.answer-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  font-variant-numeric: tabular-nums;
+}
+.answer-cell + .answer-cell {
+  border-top: 1px solid var(--line);
+}
+.answer-no {
+  font-size: 0.95rem;
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 2ch;
+}
+.answer-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.answer-source {
+  margin: 12px 0 0;
+}
+.answer-source a {
+  color: var(--accent);
+}

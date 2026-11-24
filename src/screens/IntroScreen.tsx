@@ -6,9 +6,10 @@ interface Props {
   /** quick = true 이면 설정 화면 없이 바로 시험 시작 */
   onPlay: (quick: boolean) => void
   onOpenHistory: (s: Session) => void
+  onAnswers: () => void
 }
 
-export function IntroScreen({ onPlay, onOpenHistory }: Props) {
+export function IntroScreen({ onPlay, onOpenHistory, onAnswers }: Props) {
   const [history] = useState<Session[]>(loadHistory)
   const [quick, setQuick] = useState(loadQuickStart)
 
@@ -27,15 +28,14 @@ export function IntroScreen({ onPlay, onOpenHistory }: Props) {
           <span>시험 시작</span>
         </button>
 
-        {/* 답지 보기: 추후 추가 예정 */}
-        <button className="intro-btn sheet" disabled aria-label="답지 보기 (준비 중)">
+        <button className="intro-btn sheet" onClick={onAnswers} aria-label="답지 보기">
           <svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M13 6 H29 L37 14 V42 H13 Z" />
             <path d="M29 6 V14 H37" />
             <path d="M18 21 H31 M18 27 H31 M18 33 H26" />
           </svg>
           <span>답지 보기</span>
-          <small>준비 중</small>
+          <small>5·7급 PSAT · 9급</small>
         </button>
 
         {/* 체크하면 ▶ 한 번에 바로 시작. 선택은 기억해 둔다 */}
