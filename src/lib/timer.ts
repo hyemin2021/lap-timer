@@ -16,6 +16,9 @@ export type ExamMode = 'timer' | 'clock'
 /** 연속 탭 무시 간격. 폰으로 써 보면서 여기 숫자만 바꿔 최적값을 찾는다. */
 export const DEFAULT_DEBOUNCE_MS = 500
 
+/** 문항 수 미정 시험에서 [다음] 뒤 이 시간 안에 종료하면, 그 [다음]이 만든 빈 문제는 지운다 */
+export const PHANTOM_MS = 5000
+
 export interface ExamConfig {
   name: string
   /** 시작 문항 번호. 예: 21번부터 풀면 21 (화면에 보이는 번호만 바뀌고, 내부는 0부터) */
@@ -257,21 +260,29 @@ export function applyEvent(prev: ExamState, e: ExamEvent): ExamState {
         s.pausedMs += e.t - s.pausedAt
         s.pausedAt = null
       }
-      // 문항 수 미정 시험: 마지막 [다음] 뒤에 자동으로 생긴 문제는 실제로 푼 문제가 아니다.
-      // 그 문제는 지우고, 그 시간은 검토 시간(q = null)으로 기록한다.
-      const cur = s.current
+      // 문항 수 미정 시험: 마지막 문제를 풀고 [다음]을 누른 뒤 곧바로 종료하면, 그 [다음]이 만든 빈 문제가 남는다.
+      // 그 문제에 머문 시간이 아주 짧으면(종료 확인창 누르는 정도) 실제로 푼 문제가 아니므로 지우고 검토 시간으로 친다.
+      const last = s.current
       if (
         s.open &&
-        cur !== null &&
-        cur === s.statuses.length - 1 &&
-        cur > 0 &&
-        s.statuses[cur] === 'todo' &&
-        !s.segments.some((g) => g.q === cur)
+        last !== null &&
+        last === s.statuses.length - 1 &&
+        last > 0 &&
+        s.statuses[last] === 'todo' &&
+        !s.segments.some((g) => g.q === last) &&
+        s.openSince !== null &&
+        e.t - s.openSince < PHANTOM_MS
       ) {
         s.statuses.pop()
         s.current = null
       }
       closeSegment(s, e.t)
+      // 종료 = 지금 보던 문제까지 끝낸 것. [다음] 없이 종료해도 그 문제를 완료로 치고 종료 시점까지의 시간을 넣는다.
+      // (시간이 0인 문제 — 예: [다음]과 같은 순간에 종료 — 는 손대지 않는다)
+      const cur = s.current
+      if (cur !== null && s.statuses[cur] !== 'done' && s.segments.some((g) => g.q === cur)) {
+        s.statuses[cur] = 'done'
+      }
       s.openSince = null
       s.endedAt = e.t
       s.notice = null

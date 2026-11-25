@@ -142,6 +142,7 @@ export function ExamScreen({ session, onChange, onEnd }: Props) {
         <div className="modal-backdrop">
           <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="end-title">
             <p id="end-title">시험을 종료하시겠습니까?</p>
+            {state.current !== null && <p className="hint">지금 푸는 문제는 종료 시점까지의 시간으로 완료 처리돼요.</p>}
             <div className="modal-actions">
               <button className="btn" onClick={() => setConfirmEnd(false)}>
                 아니오

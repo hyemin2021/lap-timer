@@ -268,18 +268,18 @@ describe('설정 없이 바로 시작 (문항 수 미정)', () => {
     expect(s.statuses).toEqual(['done', 'done', 'held'])
   })
 
-  it('종료하면 마지막 [다음] 뒤에 생긴 빈 문제는 지우고 그 시간은 검토 시간으로', () => {
+  it('[다음] 누르고 곧바로(5초 안) 종료하면, 그 [다음]이 만든 빈 문제는 지우고 그 시간은 검토 시간으로', () => {
     const ev = run(open, [
       { type: 'start', t: 0 },
       { type: 'tap', t: 30 * S },
       { type: 'tap', t: 50 * S },
-      { type: 'end', t: 70 * S },
+      { type: 'end', t: 53 * S },
     ])
     const sum = summarize(open, ev)
     expect(sum.questions).toHaveLength(2)
     expect(sum.doneCount).toBe(2)
-    expect(sum.reviewMs).toBe(20 * S)
-    expect(sum.totalMs).toBe(70 * S)
+    expect(sum.reviewMs).toBe(3 * S)
+    expect(sum.totalMs).toBe(53 * S)
     expect(sum.limitMs).toBeNaN()
     expect(sum.targetMs).toBeNaN()
   })
@@ -379,6 +379,45 @@ describe('일시정지', () => {
   })
 })
 
+describe('[다음] 없이 종료', () => {
+  it('정해진 시험: 보던 문제는 종료 시점까지 시간이 들어가고 완료로 친다', () => {
+    const c = cfg(3)
+    const ev = run(c, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 30 * S },
+      { type: 'tap', t: 60 * S },
+      { type: 'end', t: 100 * S }, // 3번을 40초 풀고 [다음] 없이 종료
+    ])
+    const sum = summarize(c, ev)
+    expect(sum.questions[2]).toMatchObject({ ms: 40 * S, status: 'done', doneAt: 100 * S })
+    expect(sum.doneCount).toBe(3)
+    expect(sum.reviewMs).toBe(0)
+  })
+
+  it('문항 수 미정 시험: 마지막 문제를 [다음] 없이 종료해도 그 문제가 남는다', () => {
+    const open = cfg(0, { mode: 'timer', limitMinutes: 0 })
+    const ev = run(open, [
+      { type: 'start', t: 0 },
+      { type: 'tap', t: 30 * S },
+      { type: 'end', t: 75 * S }, // 2번을 45초 풀고 종료
+    ])
+    const sum = summarize(open, ev)
+    expect(sum.questions).toHaveLength(2)
+    expect(sum.questions[1]).toMatchObject({ ms: 45 * S, status: 'done' })
+    expect(sum.doneCount).toBe(2)
+  })
+
+  it('이어풀기로 다시 열면 종료 때 완료로 쳤던 문제는 다시 푸는 중으로 돌아간다', () => {
+    const c = cfg(3)
+    const ended = run(c, [
+      { type: 'start', t: 0 },
+      { type: 'end', t: 20 * S },
+    ])
+    expect(replay(3, ended).statuses[0]).toBe('done')
+    expect(replay(3, continueAfterEnd(ended)!).statuses[0]).toBe('todo')
+  })
+})
+
 describe('이어풀기 (끝난 시험 다시 열기)', () => {
   it('일시정지 상태로 열리고, [이어서 풀기]를 누르면 보던 문제부터 이어진다', () => {
     const c = cfg(3)
@@ -416,7 +455,7 @@ describe('이어풀기 (끝난 시험 다시 열기)', () => {
     const ended = run(open, [
       { type: 'start', t: 0 },
       { type: 'tap', t: 30 * S },
-      { type: 'end', t: 40 * S },
+      { type: 'end', t: 32 * S },
     ])
     expect(summarize(open, ended).questions).toHaveLength(1)
     const s = replay(0, continueAfterEnd(ended)!)
