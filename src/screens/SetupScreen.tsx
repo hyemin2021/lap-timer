@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { type ExamConfig, formatDuration, limitMs, recommendedTargetMs } from '../lib/timer'
+import { type ExamConfig, formatDuration, limitMs, rangeLabel, recommendedTargetMs } from '../lib/timer'
 import { DEFAULT_CONFIG, type Preset, loadLastConfig, loadPresets, newId, savePresets } from '../lib/storage'
 
 interface Props {
@@ -10,16 +10,22 @@ interface Props {
 export function SetupScreen({ onStart, onBack }: Props) {
   const [c, setC] = useState<ExamConfig>(loadLastConfig)
   const [presets, setPresets] = useState<Preset[]>(loadPresets)
+  // 끝 문항은 입력 중에 시작 문항보다 작을 수 있어서 따로 들고 있다. 문항 수 = 끝 - 시작 + 1
+  const [lastQ, setLastQ] = useState(() => c.firstQuestion + c.questionCount - 1)
+  const setRange = (first: number, last: number) => {
+    setLastQ(last)
+    setC((p) => ({ ...p, firstQuestion: first, questionCount: first > 0 && last >= first ? last - first + 1 : 0 }))
+  }
 
   const set = <K extends keyof ExamConfig>(k: K, v: ExamConfig[K]) => setC((p) => ({ ...p, [k]: v }))
   const lim = limitMs(c)
-  const valid = c.questionCount >= 1 && c.questionCount <= 200 && Number.isFinite(lim)
+  const valid = c.firstQuestion >= 1 && c.questionCount >= 1 && c.questionCount <= 200 && Number.isFinite(lim)
   const rec = recommendedTargetMs(c)
   const setTarget = (min: number, sec: number) =>
     set('targetSeconds', Math.max(0, Math.floor(min)) * 60 + Math.min(59, Math.max(0, Math.floor(sec))))
 
   const savePreset = () => {
-    const name = c.name.trim() || `${c.questionCount}문항`
+    const name = c.name.trim() || rangeLabel(c)
     const next = [{ id: newId(), config: { ...c, name } }, ...presets.filter((p) => p.config.name !== name)]
     setPresets(next)
     savePresets(next)
@@ -45,7 +51,10 @@ export function SetupScreen({ onStart, onBack }: Props) {
           <div className="chips">
             {presets.map((p) => (
               <span key={p.id} className="chip">
-                <button className="chip-main" onClick={() => setC({ ...DEFAULT_CONFIG, ...p.config })}>
+                <button className="chip-main" onClick={() => {
+                    setC({ ...DEFAULT_CONFIG, ...p.config })
+                    setLastQ(p.config.firstQuestion + p.config.questionCount - 1)
+                  }}>
                   {p.config.name}
                 </button>
                 <button className="chip-x" aria-label={`${p.config.name} 삭제`} onClick={() => removePreset(p.id)}>
@@ -76,17 +85,31 @@ export function SetupScreen({ onStart, onBack }: Props) {
           시험 이름
           <input value={c.name} placeholder="예: 27 국어 수능" onChange={(e) => set('name', e.target.value)} />
         </label>
-        <label>
-          문항 수
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={200}
-            value={c.questionCount || ''}
-            onChange={(e) => set('questionCount', Math.floor(Number(e.target.value)) || 0)}
-          />
-        </label>
+        <div className="row">
+          <label>
+            시작 문항
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={c.firstQuestion || ''}
+              onChange={(e) => setRange(Math.floor(Number(e.target.value)) || 0, lastQ)}
+            />
+          </label>
+          <label>
+            끝 문항
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={lastQ > 0 ? lastQ : ''}
+              onChange={(e) => setRange(c.firstQuestion, Math.floor(Number(e.target.value)) || 0)}
+            />
+          </label>
+        </div>
+        <p className="hint">
+          {c.questionCount >= 1 ? `${rangeLabel(c)} · ${c.questionCount}문항` : '끝 문항은 시작 문항보다 크거나 같아야 해요.'}
+        </p>
 
         {c.mode === 'timer' ? (
           <label>

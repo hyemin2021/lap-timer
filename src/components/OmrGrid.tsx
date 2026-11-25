@@ -3,12 +3,14 @@ import type { QuestionStatus } from '../lib/timer'
 interface Props {
   statuses: QuestionStatus[]
   current: number | null
+  /** 시작 문항 번호 */
+  first: number
   onPick: (q: number) => void
   onClose: () => void
 }
 
 /** OMR 카드 같은 문항 그리드. 보류 문항을 표시하고, 탭하면 그 문제로 이동 */
-export function OmrGrid({ statuses, current, onPick, onClose }: Props) {
+export function OmrGrid({ statuses, current, first, onPick, onClose }: Props) {
   const held = statuses.filter((s) => s === 'held').length
   return (
     <div className="omr-backdrop" onPointerDown={(e) => e.stopPropagation()}>
@@ -23,9 +25,9 @@ export function OmrGrid({ statuses, current, onPick, onClose }: Props) {
               key={i}
               className={`omr-cell ${s} ${i === current ? 'current' : ''}`}
               onClick={() => onPick(i)}
-              aria-label={`${i + 1}번 ${s === 'done' ? '완료' : s === 'held' ? '보류' : '미응답'}`}
+              aria-label={`${first + i}번 ${s === 'done' ? '완료' : s === 'held' ? '보류' : '미응답'}`}
             >
-              <span className="omr-no">{i + 1}</span>
+              <span className="omr-no">{first + i}</span>
               <span className="omr-bubble" />
             </button>
           ))}

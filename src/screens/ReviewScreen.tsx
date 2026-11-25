@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { BarChart } from '../components/BarChart'
 import type { Session } from '../lib/storage'
-import { examTitle, formatDuration, summarize } from '../lib/timer'
+import { examTitle, formatDuration, qNo, summarize } from '../lib/timer'
 
 interface Props {
   session: Session
@@ -117,7 +117,7 @@ export function ReviewScreen({ session, onHome, onDelete, onContinue }: Props) {
               return (
                 <tr key={r.q} className={r.status !== 'done' ? 'undone' : ''}>
                   <td>
-                    {r.q + 1}
+                    {qNo(config, r.q)}
                     {r.status === 'held' && <em> 보류</em>}
                     {r.status === 'todo' && <em>{r.ms > 0 ? ' 미완료' : ' 안 봄'}</em>}
                   </td>
@@ -138,7 +138,7 @@ export function ReviewScreen({ session, onHome, onDelete, onContinue }: Props) {
 
       <section className="card">
         <h2>문제별 소요 시간</h2>
-        <BarChart questions={sum.questions} targetMs={sum.targetMs} />
+        <BarChart questions={sum.questions} targetMs={sum.targetMs} first={qNo(config, 0)} />
       </section>
 
       <div className="actions">

@@ -5,7 +5,7 @@ import { useLongPress } from '../hooks/useLongPress'
 import { useNow } from '../hooks/useNow'
 import { allowSleep, keepAwake } from '../lib/keepAwake'
 import type { Session } from '../lib/storage'
-import { type ExamEvent, elapsedMs, formatDuration, parseClock, replay, tryAppend, undo } from '../lib/timer'
+import { type ExamEvent, elapsedMs, formatDuration, parseClock, qNo, replay, tryAppend, undo } from '../lib/timer'
 
 interface Props {
   session: Session
@@ -87,7 +87,7 @@ export function ExamScreen({ session, onChange, onEnd }: Props) {
           </svg>
           문항표
         </button>
-        {state.notice && <span className="notice">보류 {state.notice.q + 1}번</span>}
+        {state.notice && <span className="notice">보류 {qNo(config, state.notice.q)}번</span>}
         <span className="spacer" />
         <button className="end" onClick={() => setConfirmEnd(true)}>
           종료
@@ -127,7 +127,7 @@ export function ExamScreen({ session, onChange, onEnd }: Props) {
             <span className="next-label">검토 중</span>
           ) : (
             <>
-              <span className="next-no">{state.current! + 1}</span>
+              <span className="next-no">{qNo(config, state.current!)}</span>
               <span className="next-label">다음</span>
             </>
           )}
@@ -135,7 +135,7 @@ export function ExamScreen({ session, onChange, onEnd }: Props) {
       </div>
 
       {gridOpen && (
-        <OmrGrid statuses={state.statuses} current={state.current} onPick={onJump} onClose={() => setGridOpen(false)} />
+        <OmrGrid statuses={state.statuses} current={state.current} first={qNo(config, 0)} onPick={onJump} onClose={() => setGridOpen(false)} />
       )}
 
       {confirmEnd && (

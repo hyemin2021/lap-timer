@@ -45,6 +45,7 @@ export const newId = () => `${Date.now().toString(36)}-${Math.random().toString(
 
 export const DEFAULT_CONFIG: ExamConfig = {
   name: '',
+  firstQuestion: 1,
   questionCount: 45,
   mode: 'timer',
   limitMinutes: 80,
@@ -92,6 +93,7 @@ export const saveQuickStart = (v: boolean) => write(KEY_QUICK_START, v)
 export const QUICK_CONFIG: ExamConfig = {
   ...DEFAULT_CONFIG,
   name: '',
+  firstQuestion: 1,
   questionCount: 0,
   mode: 'timer',
   limitMinutes: 0,

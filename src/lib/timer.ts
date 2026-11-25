@@ -18,6 +18,9 @@ export const DEFAULT_DEBOUNCE_MS = 500
 
 export interface ExamConfig {
   name: string
+  /** 시작 문항 번호. 예: 21번부터 풀면 21 (화면에 보이는 번호만 바뀌고, 내부는 0부터) */
+  firstQuestion: number
+  /** 문항 수 = 끝 문항 - 시작 문항 + 1. 0 이면 문항 수 미정 */
   questionCount: number
   mode: ExamMode
   /** 타이머식 제한시간(분) */
@@ -436,10 +439,17 @@ export function formatRemaining(remainingMs: number): string {
 }
 
 /** 기록 목록·복기 화면에 쓸 시험 제목 */
-export function examTitle(config: Pick<ExamConfig, 'name' | 'questionCount'>): string {
+export function examTitle(config: Pick<ExamConfig, 'name' | 'questionCount' | 'firstQuestion'>): string {
   if (config.name.trim()) return config.name
-  return config.questionCount > 0 ? `${config.questionCount}문항` : '바로 시작'
+  return config.questionCount > 0 ? rangeLabel(config) : '바로 시작'
 }
+
+/** 화면에 보이는 문항 번호 (i 는 0부터) */
+export const qNo = (config: Pick<ExamConfig, 'firstQuestion'>, i: number) => (config.firstQuestion || 1) + i
+
+/** '21~40번' */
+export const rangeLabel = (config: Pick<ExamConfig, 'firstQuestion' | 'questionCount'>) =>
+  `${qNo(config, 0)}~${qNo(config, config.questionCount - 1)}번`
 
 /**
  * 끝난 시험을 이어서 풀기.

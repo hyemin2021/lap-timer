@@ -4,6 +4,8 @@ import { formatDuration, type QuestionSummary } from '../lib/timer'
 interface Props {
   questions: QuestionSummary[]
   targetMs: number
+  /** 시작 문항 번호 */
+  first: number
 }
 
 /**
@@ -11,7 +13,7 @@ interface Props {
  * 목표를 넘긴 막대는 진한 색 — 범례에 글로 설명하므로 색만으로 구분하지 않는다.
  * 막대를 탭하면 정확한 값이 뜬다.
  */
-export function BarChart({ questions, targetMs }: Props) {
+export function BarChart({ questions, targetMs, first }: Props) {
   const [sel, setSel] = useState<number | null>(null)
   const n = questions.length
   // 목표가 없는 시험(설정 없이 시작)은 기준선·초과 색 없이 그린다
@@ -69,7 +71,7 @@ export function BarChart({ questions, targetMs }: Props) {
                 {h > 0 && <path d={d} className={`bar ${over ? 'over' : ''} ${sel === i ? 'sel' : ''}`} />}
                 {(i % labelEvery === labelEvery - 1 || i === 0 || labelEvery === 1) && (
                   <text x={x + barW / 2} y={H - 6} className="axis" textAnchor="middle">
-                    {i + 1}
+                    {first + i}
                   </text>
                 )}
               </g>
@@ -81,7 +83,7 @@ export function BarChart({ questions, targetMs }: Props) {
       </div>
       <div className="chart-tip" aria-live="polite">
         {selQ
-          ? `${selQ.q + 1}번 · ${formatDuration(selQ.ms)}${selQ.status !== 'done' ? ' · 미완료' : ''}`
+          ? `${first + selQ.q}번 · ${formatDuration(selQ.ms)}${selQ.status !== 'done' ? ' · 미완료' : ''}`
           : '막대를 탭하면 자세히 보여요'}
       </div>
     </div>

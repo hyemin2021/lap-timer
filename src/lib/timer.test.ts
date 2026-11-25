@@ -19,6 +19,7 @@ import {
 const S = 1000
 const cfg = (n: number, extra: Partial<ExamConfig> = {}): ExamConfig => ({
   name: '테스트',
+  firstQuestion: 1,
   questionCount: n,
   mode: 'clock',
   limitMinutes: 80,
@@ -523,5 +524,20 @@ describe('포맷', () => {
   it('남은 시간 초과는 + 로', () => {
     expect(formatRemaining(10 * S)).toBe('00:10')
     expect(formatRemaining(-192 * S)).toBe('+03:12')
+  })
+})
+
+describe('시작 문항 번호', () => {
+  it('21~40번 시험은 화면 번호가 21부터', async () => {
+    const { qNo, rangeLabel, examTitle } = await import('./timer')
+    const c = { name: '', firstQuestion: 21, questionCount: 20 }
+    expect(qNo(c, 0)).toBe(21)
+    expect(qNo(c, 19)).toBe(40)
+    expect(rangeLabel(c)).toBe('21~40번')
+    expect(examTitle(c)).toBe('21~40번')
+  })
+  it('예전 기록(시작 문항 없음)은 1번부터', async () => {
+    const { normalizeConfig } = await import('./storage')
+    expect(normalizeConfig({ questionCount: 40 }).firstQuestion).toBe(1)
   })
 })
